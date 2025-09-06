@@ -1,0 +1,95 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Category {
+  ELECTRONICS
+  FASHION
+  HOME
+  BOOKS
+  TOYS
+  SPORTS
+  OTHER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  username      String    @unique
+  avatarUrl     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  products      Product[]
+  orders        Order[]
+  cart          Cart?
+}
+
+model Product {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  priceCents  Int
+  category    Category
+  imageUrl    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  seller     User     @relation(fields: [sellerId], references: [id])
+  sellerId   String
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+
+  @@index([title])
+  @@index([category])
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  user      User       @relation(fields: [userId], references: [id])
+  userId    String     @unique
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cart      Cart     @relation(fields: [cartId], references: [id])
+  cartId    String
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@unique([cartId, productId])
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  user      User        @relation(fields: [userId], references: [id])
+  userId    String
+  items     OrderItem[]
+  totalCents Int
+  createdAt DateTime    @default(now())
+}
+
+model OrderItem {
+  id            String   @id @default(cuid())
+  order         Order    @relation(fields: [orderId], references: [id])
+  orderId       String
+  product       Product  @relation(fields: [productId], references: [id])
+  productId     String
+  titleSnapshot String
+  priceCentsSnapshot Int
+  quantity      Int      @default(1)
+}
